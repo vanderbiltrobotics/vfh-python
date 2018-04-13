@@ -2,6 +2,9 @@
 
 Author: Zhanwen (Phil) Chen
 
+Vector Field Histogram is a robot path planning algorithm. We originally
+implemented this algorithm in C++ in [VectorFieldHistogramTesting](https://github.com/vanderbiltrobotics/VectorFieldHistogramTesting).
+
 We reimplement VFH because the original C++ implementation contains a
 mystery bug, rendering it unusable. We suspect that the bug may be a result
 of wrong C++ pointers, and Python helps avoid such idiosyncracies. Another

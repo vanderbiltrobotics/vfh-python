@@ -43,22 +43,26 @@ class PolarHistogram:
         return angle // self.bin_width
 #         return ((angle % self.num_bins) + self.num_bins) % nBins
 
-    def get_middle_angle_from_bin(self, bin_index):
+    def get_middle_angle_of_bin(self, bin_index):
         """Returns the angle in the middle of the bin."""
         return (bin_index + 0.5) * self.bin_width
 
 
     def get_certainty_from_angle(self, angle):
         """Returns the value of the histogram for the specified bin."""
-        return self.polar_histogram[self.get_bin_index_from_angle(angle)];
+        return self.get_certainty(self.get_bin_index_from_angle(angle))
+
+    def get_certainty(self, bin):
+        """Returns the value of the histogram for the specified bin."""
+        return self.polar_histogram[bin]
 
 
-    def increment_certainty_of_bin_at_angle(self, angle, delta_certainty):
+    def add_certainty_to_bin_at_angle(self, angle, delta_certainty):
         """Adds the passed value to the current value of the histogr1am grid."""
         self.polar_histogram[get_bin_index_from_angle(angle)] += delta_certainty
 
 
-    def smoothHistogram(l):
+    def smooth_histogram(self, l):
         """Smoothing function that smooths the values of the histogram using a moving average."""
         for i in range(self.num_bins):
             culmsum = self.polar_histogram[i]*l

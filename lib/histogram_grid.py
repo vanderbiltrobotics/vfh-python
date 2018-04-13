@@ -14,7 +14,11 @@ class HistogramGrid:
         self.object_grid = [[0] * ncols for i in range(nrows)]
 
     @classmethod
-    def build_histogram_from_txt(cls, map_fname, resolution):
+    def from_txt(cls, map_fname, active_region_dimension, resolution):
+        """
+        Args:
+            active_region_dimension: a tuple (x, y).
+        """
         with open(map_fname, 'r') as f:
             reader = csv.reader(f, delimiter=" ")
             lines = list(reader)
@@ -85,10 +89,40 @@ class HistogramGrid:
         angle_degrees = math.degrees(angle_radian)
         return angle_degrees
 
+    def get_active_region(self):
+        robot_location_x, robot_location_y = self.robot_location
+        active_region_x_size, active_region_y_size = active_region_dimension
+
+        active_region_min_x = robot_location_x - active_region_x_size / 2
+        if(active_region_min_x < 0):
+            active_region_min_x = 0
+
+        active_region_min_y = robot_location_y - active_region_y_size / 2
+        if(active_region_min_y < 0):
+            active_region_min_y = 0
+
+        active_region_max_x = robot_location_x + active_region_x_size / 2
+        if(active_region_max_x >= active_region_x_size):
+            active_region_max_x = active_region_x_size
+
+        active_region_max_y = robot_location_y + active_region_y_size - active_region_y_size / 2
+        if(active_region_max_y >= active_region_y_size):
+            active_region_max_y = active_region_y_size
+
+        return (x_min)
+
+
+    def get_robot_location(self):
+        return self.robot_location
+
+    def get_target_location(self):
+        return self.target_location
+
+    def set_robot_location(self, robot_location):
+        self.robot_location = robot_location
+
+    def set_target_location(self, target_location):
+        self.target_location = target_location
+
 def get_discrete_displacement(discrete_start, discrete_end):
     return tuple(map(sub, discrete_start, discrete_end))
-
-map_fname = 'map.txt'
-resolution = 1 # node size = 1cm
-# histogram_grid = HistogramGrid(resolution)
-hg = HistogramGrid.build_histogram_from_txt(map_fname, resolution)
