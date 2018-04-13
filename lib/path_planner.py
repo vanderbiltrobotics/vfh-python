@@ -44,12 +44,11 @@ class PathPlanner:
         self.histogram_grid.setRobotLoc(pos)
 
 
-    def generate_histogram():
+    def generate_histogram(self):
         """Builds the vector field histogram based on current position of robot and surrounding obstacles"""
         self.polar_histogram.reset()
-        active_region = self.histogram_grid.get_active_region()
 
-        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = active_region
+        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.histogram_grid.get_active_region();
 
         histogram_grid = self.histogram_grid
         polar_histogram = self.polar_histogram
