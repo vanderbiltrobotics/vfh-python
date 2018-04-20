@@ -1,25 +1,12 @@
 """
 path_planner.py
 
-A polar histogram means this, assuming bin_width=36
-(therefore num_bins = 360 / 36 = 10):
-
-
-index, corresponding_angle, histogram_angle
-0, 0, 123
-1, 36, 0
-2, 72, 30
-...
-9, 324, 0
-
-(equation: i * bin_width = angle)
-
-However, we only keep index in a flat array for histograms, so we don't natively get/set by angle
-but instead translate to and from angle.
+PathPlanner should cannibalize both histogram_grid and polar_histogram. There
+is no reason that
 """
 # PolarHistogram class creates an object to represent the Polar Histogram
 class PathPlanner:
-    def __init__(self, polar_histogram, histogram_grid, a=200, b=1, l=5,
+    def __init__(self, histogram_grid, polar_histogram, robot_location, target_location, a=200, b=1, l=5,
                  max_num_nodes_for_valley=15, valley_threshold=10):
         """
         Creates a Polar Histogram object with the number of bins passed.
@@ -32,6 +19,8 @@ class PathPlanner:
         """
         self.polar_histogram = polar_histogram
         self.histogram_grid = histogram_grid
+        self.set_robot_location(robot_location)
+        self.set_target_discrete_location(target_location)
         self.a = a
         self.b = b
         self.l = l
@@ -40,15 +29,19 @@ class PathPlanner:
 
 #     //TODO: Add ability to dynamically set certainty value
 #     //TODO This function may be deprecated as we restructure the robot code for ROSMOD
-    def update_robot_position(new_location):
-        self.histogram_grid.setRobotLoc(pos)
+    def set_robot_location(self, new_location):
+        """new_location: a tuple (x, y)."""
+        self.histogram_grid.set_robot_location(new_location)
+
+    def set_target_discrete_location(self, target_discrete_location):
+        self.histogram_grid.set_target_discrete_location(target_discrete_location)
 
 
     def generate_histogram(self):
         """Builds the vector field histogram based on current position of robot and surrounding obstacles"""
         self.polar_histogram.reset()
 
-        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.histogram_grid.get_active_region();
+        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.histogram_grid.get_active_region()
 
         histogram_grid = self.histogram_grid
         polar_histogram = self.polar_histogram
@@ -58,15 +51,11 @@ class PathPlanner:
         for x in range(active_region_min_x, active_region_max_x):
             for y in range(active_region_min_y, active_region_max_y):
                 node_considered = (x, y)
-                certainty = histogram_grid.get_certainty(node_considered)
+                certainty = histogram_grid.get_certainty_at_discrete_point(node_considered)
                 distance = histogram_grid.get_continuous_distance_between_discrete_points(node_considered, robot_location)
-                delta_certainty = (certainty ** 2) * (a - b * distance)
-                polar_histogram.addValue(histogram_grid.getAngle(robot_location, node_considered), delta_certainty)
-                # std::cout << curNode.x << " " << curNode.y << " " << val << "\n";
-
-                histogram_grid.get_certainty(node_considered)
-                # std::cout << curNode.x << " " << curNode.y << " " << pow( (*grid).getCertainty(curNode),2)*(a-b* (*grid).getDistance(curNode,  (*grid).getRobotLoc())) << "\n";
-        print("End Histogram Generation\n")
+                delta_certainty = (certainty ** 2) * (self.a - self.b * distance)
+                polar_histogram.add_certainty_to_bin_at_angle(histogram_grid.get_angle_between_discrete_points(robot_location, node_considered), delta_certainty)
+                histogram_grid.get_certainty_at_discrete_point(node_considered)
 
 
     def get_best_angle(self):
@@ -78,6 +67,7 @@ class PathPlanner:
             (double) angle
         """
         self.generate_histogram() # Computes the polar histogram
+        print("get_best_angle: before smoothing")
         self.print_histogram()
 
         polar_histogram = self.polar_histogram
@@ -87,16 +77,18 @@ class PathPlanner:
         num_bins = polar_histogram.num_bins
 
         polar_histogram.smooth_histogram(self.l) # Smoothing histogram
+        print("get_best_angle: after smoothing")
+        self.print_histogram()
+
 
         robot_location = histogram_grid.get_robot_location()
-        target_location = histogram_grid.get_target_location()
-        robot_to_target_angle = histogram_grid.get_angle_between_discrete_points(robot_location, target_location)
-        # startBin represent bin at which valley finding starts
+        target_discrete_location = histogram_grid.get_target_discrete_location()
+        robot_to_target_angle = histogram_grid.get_angle_between_discrete_points(robot_location, target_discrete_location)
         start_bin = polar_histogram.get_bin_index_from_angle(robot_to_target_angle) # Determine the bin in which the target falls
 
         # EDGE CASE: Determining if the target direction falls within a bin
         # This handled by finding the edges of the valleys
-        if polar_histogram.get_certainty(start_bin) < valley_threshold:
+        if polar_histogram.get(start_bin) < valley_threshold:
             # Edge Case: Desired travel direction is within a valley - we need to search.
 
             # Store the indices of the edges of the valley
@@ -111,8 +103,9 @@ class PathPlanner:
             # Iterating over the histogram to find valley.
             # Iteration occurs alternating in left & right direction of target
             while count <= num_bins and count <= max_num_nodes_for_valley:
-                i = start_bin + negative * count / divide # Index of bin to check next
-                if polar_histogram.get_certainty(i) > valley_threshold:
+                # TODO: covering to int floor or ceiling?
+                i = start_bin + int(negative * count / divide) # Index of bin to check next
+                if polar_histogram.get(i) > valley_threshold:
                     if negative == 1:
                         rightIndex = i + 1
                     else:
@@ -136,7 +129,7 @@ class PathPlanner:
                 # //If divide is 1, one edge of the boundary has been found.
                 for j in range(divide):
                     count -= 1;
-                    i = startBin + negative * count / divide # Index of bin to check next
+                    i = start_bin + int(negative * count / divide) # Index of bin to check next
 
                     if negative == 1:
                         rightIndex = i + 1 # Storing edge of valley
@@ -160,12 +153,12 @@ class PathPlanner:
             # int i;
             # Checking left side
             # print("\n Left Side parameters: \n")
-            for i in range(startBin + 1, num_bins + 1):
-                if polar_histogram.get_certainty(i) < valley_threshold:
+            for i in range(start_bin + 1, num_bins + 1):
+                if polar_histogram.get(i) < valley_threshold:
                     # Found valley
                     rightIndex = i
                     # Iterating over valley to find other edge of the valley.
-                    while polar_histogram.get_certainty(i) < valley_threshold and abs(i - rightIndex) < max_num_nodes_for_valley:
+                    while polar_histogram.get(i) < valley_threshold and abs(i - rightIndex) < max_num_nodes_for_valley:
                         i += 1
 
                     leftIndex = i
@@ -182,18 +175,17 @@ class PathPlanner:
             # // std::cout << "\n Right Side parameters: \n";
             for j in range(start_bin - 1, i, -1):
                 # // std::cout << "\nj: " << j << " " << i << " " << polarHist.getValue(j) << "\n";
-                if polar_histogram.get_certainty(j) < valley_threshold:
+                if polar_histogram.get(j) < valley_threshold:
                     # Found valley
                     rightIndex = j + 1
                     # Iterating over valley to find other edge of the valley.
-                    while(polar_histogram.get_certainty(j) < valley_threshold and abs(j-rightIndex) < max_num_nodes_for_valley):
+                    while(polar_histogram.get(j) < valley_threshold and abs(j-rightIndex) < max_num_nodes_for_valley):
                         j -= 1
 
                     leftIndex = j + 1
                     leftTravelDir = (rightIndex + leftIndex) / 2;
                     # std::cout << "lol"<<polarHist.getIndex(leftIndex) << " " << polarHist.getIndex(rightIndex) << " " << polarHist.getIndex(rightTravelDir) << "\n";
                     break # Since loop begins iterating from the target direction, the valley must be the closest valley
-            # // std::cout << "\nTarget Direction: " << startBin << "\n";
             if abs(rightTravelDir - start_bin) < abs(leftTravelDir - start_bin):
                 # // std::cout << "\nSelected Direction: " << polarHist.getIndex(rightTravelDir) << "\n";
                 return polar_histogram.get_middle_angle_of_bin(rightTravelDir)
@@ -201,8 +193,8 @@ class PathPlanner:
                 # // std::cout << "\nSelected Direction: " << polarHist.getIndex(leftTravelDir) << "\n";
                 return polar_histogram.get_middle_angle_of_bin(leftTravelDir)
 
-    def printHistogram(self):
-        self.polar_histogram.printHistogram()
+    def print_histogram(self):
+        print(self.polar_histogram)
 
     def get_object_grid(self):
         return self.histogram_grid.get_object_grid()
