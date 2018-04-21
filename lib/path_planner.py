@@ -4,10 +4,13 @@ path_planner.py
 PathPlanner should cannibalize both histogram_grid and polar_histogram. There
 is no reason that
 """
+from itertools import groupby
+from operator import itemgetter
+
 # PolarHistogram class creates an object to represent the Polar Histogram
 class PathPlanner:
     def __init__(self, histogram_grid, polar_histogram, robot_location, target_location, a=200, b=1, l=5,
-                 max_num_nodes_for_valley=15, valley_threshold=10):
+                 s_max=15, valley_threshold=200):
         """
         Creates a Polar Histogram object with the number of bins passed.
 
@@ -15,7 +18,7 @@ class PathPlanner:
             polar_histogram: Object used to store the polar histogram.
             histogram_grid: Object used to store the grid/map of obstacles.
             a, b, l: Hyperparameters for the smoothing the polar histogram.
-            max_num_nodes_for_valley: Hyperparameter: the maximum number of nodes that define a wide valley
+            s_max: Hyperparameter: the maximum number of nodes that define a wide valley
         """
         self.polar_histogram = polar_histogram
         self.histogram_grid = histogram_grid
@@ -24,8 +27,12 @@ class PathPlanner:
         self.a = a
         self.b = b
         self.l = l
-        self.max_num_nodes_for_valley = max_num_nodes_for_valley
+        self.s_max = s_max
         self.valley_threshold = valley_threshold
+        # self.robot_location = histogram_grid.get_robot_location()
+        # self.target_discrete_location = histogram_grid.get_target_discrete_location()
+        self.robot_to_target_angle = histogram_grid.get_angle_between_discrete_points(robot_location, target_location)
+        self.generate_histogram()
 
 #     //TODO: Add ability to dynamically set certainty value
 #     //TODO This function may be deprecated as we restructure the robot code for ROSMOD
@@ -57,8 +64,65 @@ class PathPlanner:
                 polar_histogram.add_certainty_to_bin_at_angle(histogram_grid.get_angle_between_discrete_points(robot_location, node_considered), delta_certainty)
                 histogram_grid.get_certainty_at_discrete_point(node_considered)
 
+        polar_histogram.smooth_histogram(self.l)
+
+
+    # TODO: We need to reorganize the polar histogram, starting NOT with the
+    # target angle but with first bin closest to the target angle which does
+    # not have a certainty (due to distance) and ending at max length.
+
+    def get_filtered_polar_histogram(self):
+        print(self.polar_histogram._polar_histogram)
+        filtered = [bin_index for bin_index, certainty in enumerate(self.polar_histogram._polar_histogram) if certainty < self.valley_threshold]
+        print(filtered)
+        return filtered
+
+
+    def get_sectors(self, filtered_polar_histogram):
+        # TODO: each sector needs to be sorted by wrapped angle.
+        # for k, g in groupby(enumerate(self._polar_histogram), lambda (i, x): i-x):
+        return [list(map(itemgetter(1), g)) for k, g in groupby(enumerate(filtered_polar_histogram), lambda ix : ix[0] - ix[1])]
+
 
     def get_best_angle(self):
+        filtered_polar_histogram = self.get_filtered_polar_histogram()
+        sectors = self.get_sectors(filtered_polar_histogram)
+        print(sectors)
+
+        # Edge Case: there is only one sector. Raise error and cede control.
+        if len(sectors[0]) == 1:
+            raise ValueError('path_planner: the entire histogram is a valley, given vallye threshold ' + str(self.valley_threshold))
+
+        angles = []
+        for sector in sectors:
+            if len(sector) > self.s_max:
+                # Case 1: Wide valley. Include only s_max bins.
+                # k_n is the bin closest to the target direction
+                if abs(sector[0] - self.robot_to_target_angle) > abs(sector[-1] - self.robot_to_target_angle):
+                    k_n = 0
+                    k_f = k_n + s_max - 1
+                else:
+                    k_n = len(sector) - 1
+                    k_f = k_n - s_max + 1
+
+            else:
+                # Case 2: Narrow valley. Include all bins.
+                # Order doesn't matter.
+                k_n = sector[0]
+                k_f = sector[-1]
+
+
+            angle = (self.polar_histogram.get(k_n) + self.polar_histogram.get(k_f)) / 2
+            angles.append(angle)
+
+
+        distances = [(angle, abs(self.robot_to_target_angle - angle)) for angle in angles]
+        smallest_distances = sorted(distances, key=itemgetter(1))
+
+        return smallest_distances[0][0]
+
+
+    def get_best_angle_old(self):
         """
         Determines the optimal travel direction for the robot based on the generated polar histogram.
         Works by finding the valley whose direction most closely matches the direction of the target.
@@ -67,18 +131,13 @@ class PathPlanner:
             (double) angle
         """
         self.generate_histogram() # Computes the polar histogram
-        print("get_best_angle: before smoothing")
-        self.print_histogram()
 
         polar_histogram = self.polar_histogram
         histogram_grid = self.histogram_grid
         valley_threshold = self.valley_threshold
-        max_num_nodes_for_valley = self.max_num_nodes_for_valley
+        s_max = self.s_max
         num_bins = polar_histogram.num_bins
 
-        polar_histogram.smooth_histogram(self.l) # Smoothing histogram
-        print("get_best_angle: after smoothing")
-        self.print_histogram()
 
 
         robot_location = histogram_grid.get_robot_location()
@@ -102,7 +161,7 @@ class PathPlanner:
 #             int i; //Stores index to search
             # Iterating over the histogram to find valley.
             # Iteration occurs alternating in left & right direction of target
-            while count <= num_bins and count <= max_num_nodes_for_valley:
+            while count <= num_bins and count <= s_max:
                 # TODO: covering to int floor or ceiling?
                 i = start_bin + int(negative * count / divide) # Index of bin to check next
                 if polar_histogram.get(i) > valley_threshold:
@@ -121,7 +180,7 @@ class PathPlanner:
 
                 count += 1
 
-            if count > max_num_nodes_for_valley:
+            if count > s_max:
                 # The maximum size of a valley was reached. Write the edges at the last searched bins
 
                 # //Stores the edges of the valley if the size has reached maxNumNodesForValley.
@@ -137,7 +196,7 @@ class PathPlanner:
                         leftIndex = i
             #  std::cout << leftIndex << " " << rightIndex << "\n";
             # Returns the average value of the bins
-            bins = (rightIndex + leftIndex)/2
+            bins = (rightIndex + leftIndex)//2
             return polar_histogram.get_middle_angle_of_bin(bins);
 
         else:
@@ -158,7 +217,7 @@ class PathPlanner:
                     # Found valley
                     rightIndex = i
                     # Iterating over valley to find other edge of the valley.
-                    while polar_histogram.get(i) < valley_threshold and abs(i - rightIndex) < max_num_nodes_for_valley:
+                    while polar_histogram.get(i) < valley_threshold and abs(i - rightIndex) < s_max:
                         i += 1
 
                     leftIndex = i
@@ -167,7 +226,7 @@ class PathPlanner:
                     break # Since loop begins iterating from the target direction, the valley must be the closest valley
 
             if i < num_bins / 2:
-                i = num_bins - num_bins/2; # setting max iteration for left side
+                i = num_bins - int(num_bins//2); # setting max iteration for left side
             i -= num_bins
             # // std::cout << "\ni: " <<  i << " " << polarHist.getIndex(i) << std::endl;
             # int j;
@@ -179,7 +238,7 @@ class PathPlanner:
                     # Found valley
                     rightIndex = j + 1
                     # Iterating over valley to find other edge of the valley.
-                    while(polar_histogram.get(j) < valley_threshold and abs(j-rightIndex) < max_num_nodes_for_valley):
+                    while(polar_histogram.get(j) < valley_threshold and abs(j-rightIndex) < s_max):
                         j -= 1
 
                     leftIndex = j + 1
