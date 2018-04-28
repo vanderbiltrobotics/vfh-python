@@ -10,7 +10,7 @@ from operator import itemgetter
 # PolarHistogram class creates an object to represent the Polar Histogram
 class PathPlanner:
     def __init__(self, histogram_grid, polar_histogram, robot_location, target_location, a=200, b=1, l=5,
-                 s_max=15, valley_threshold=200):
+                 s_max=15, valley_threshold=1000):
         """
         Creates a Polar Histogram object with the number of bins passed.
 
@@ -74,9 +74,9 @@ class PathPlanner:
     # not have a certainty (due to distance) and ending at max length.
 
     def get_filtered_polar_histogram(self):
-        # print("path_planner: unfiltered =", self.polar_histogram._polar_histogram)
+        print("path_planner: unfiltered =", self.polar_histogram._polar_histogram)
         filtered = [bin_index for bin_index, certainty in enumerate(self.polar_histogram._polar_histogram) if certainty < self.valley_threshold]
-        # print("path_planner: filtered < %s =" % self.valley_threshold, filtered)
+        print("path_planner: filtered < %s =" % self.valley_threshold, filtered)
         return filtered
 
 
@@ -91,7 +91,7 @@ class PathPlanner:
     def get_best_angle(self):
         filtered_polar_histogram = self.get_filtered_polar_histogram()
         sectors = self.get_sectors(filtered_polar_histogram)
-        # print("path_planner: after filtering, sectors =", sectors)
+        print("path_planner: after filtering, sectors =", sectors)
 
         # Edge Case: there is only one sector. Raise error and cede control.
         if len(sectors[0]) == 1:
