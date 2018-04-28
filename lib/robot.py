@@ -5,6 +5,7 @@
 
 # NOTE: all speed and velocity units are continuous distance per timestep.tgm
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 import math
 import time
 import numpy as np
@@ -59,6 +60,7 @@ class Robot:
 
         # Why does path_planner need discrete location?
         discrete_location = self.path_planner.histogram_grid.continuous_point_to_discrete_point(self.location)
+        print("robot: discrete_location =", discrete_location)
         self.path_planner.set_robot_location(discrete_location)
 
 
@@ -109,6 +111,11 @@ class Robot:
             display.clear_output(wait=True)
             display.display(plt.gcf())
             # plt.draw()
+            # bnext = Button(ax, 'Next')
+            # bnext.on_clicked(self.step_callback)
+            # bprev = Button(ax, 'Previous')
+            # bprev.on_clicked(callback.prev)
+
 
         for i in range(num_steps):
             self.step()
@@ -123,11 +130,18 @@ class Robot:
                 paths_robot = ax.scatter(*self.location, color='blue')
                 paths_target = ax.scatter(*self.path_planner.target_location, color='green')
                 paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+                self.print_histogram()
 
                 display.clear_output(wait=True)
                 display.display(plt.gcf())
                 # figure.canvas.draw_idle()
                 # plt.pause(0.1)
+
+    def step_callback(self, event):
+        print("lol")
+        self.step()
+        self.print_histogram()
+
 
     def draw(self, ax):
         # figure = plt.gcf()
@@ -145,6 +159,9 @@ class Robot:
         # plt.show()
         # plt.draw()
 
+
+    def print_histogram(self):
+        self.path_planner.print_histogram()
 
 
     def get_polar_bins(self):

@@ -42,8 +42,10 @@ class HistogramGrid:
             continuous_point: A tuple ()
         """
         continuous_x, continuous_y = continuous_point
-        discrete_x = continuous_x//self.dimension[0]
-        discrete_y = continuous_y//self.dimension[1]
+        discrete_x = continuous_x//self.resolution
+        discrete_y = continuous_y//self.resolution
+        # discrete_x = continuous_x//self.dimension[0]
+        # discrete_y = continuous_y//self.dimension[1]
         # if(out.x < iMax && out.y < jMax) return out;
         # TODO ERROR HANDLING
         # throw;

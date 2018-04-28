@@ -22,7 +22,6 @@ class PathPlanner:
         """
         self.polar_histogram = polar_histogram
         self.histogram_grid = histogram_grid
-        self.set_robot_location(robot_location)
         self.set_target_discrete_location(target_location)
         self.a = a
         self.b = b
@@ -33,13 +32,15 @@ class PathPlanner:
         # self.robot_location = histogram_grid.get_robot_location()
         # self.target_discrete_location = histogram_grid.get_target_discrete_location()
         self.robot_to_target_angle = histogram_grid.get_angle_between_discrete_points(robot_location, target_location)
-        self.generate_histogram()
+        self.set_robot_location(robot_location)
 
 #     //TODO: Add ability to dynamically set certainty value
 #     //TODO This function may be deprecated as we restructure the robot code for ROSMOD
     def set_robot_location(self, new_location):
         """new_location: a tuple (x, y)."""
         self.histogram_grid.set_robot_location(new_location)
+        self.generate_histogram()
+
 
     def set_target_discrete_location(self, target_discrete_location):
         self.histogram_grid.set_target_discrete_location(target_discrete_location)
