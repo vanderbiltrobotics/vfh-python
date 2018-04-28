@@ -6,16 +6,17 @@
 # NOTE: all speed and velocity units are continuous distance per timestep.tgm
 import matplotlib.pyplot as plt
 import math
+import time
+import numpy as np
+from IPython import display
+
+
 
 from lib.path_planner import PathPlanner
 from lib.histogram_grid import HistogramGrid
 from lib.polar_histogram import PolarHistogram
 
 class Robot:
-    def get_cell_location(self):
-        return
-
-
     def __init__(self, histogram_grid, polar_histogram, init_location, target_location, init_speed):
         # CHANGED: we shouldn't need polar_histogram, only histogram_grid
         self.path_planner = PathPlanner(histogram_grid, polar_histogram, init_location, target_location)
@@ -32,12 +33,7 @@ class Robot:
         return cls(histogram_grid, polar_histogram, init_location, target_location, init_speed)
 
 
-    def viz_step(self):
-        figure = plt.figure()
-        obstacles = self.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
-        target = self.histogram_grid.get_target_location() # TODO: does a robot have a target or does a histogram have one?
 
-        plt.plot(obstacles)
 
     def update_angle(self):
         self.angle = self.path_planner.get_best_angle()
@@ -47,12 +43,12 @@ class Robot:
 
 
     def update_velocity(self):
-        old_v_x, old_v_y = self.velocity
-        self.velocity = ()
+        # old_v_x, old_v_y = self.velocity
+        self.velocity = (self.speed * math.cos(self.angle), self.speed * math.sin(self.angle))
 
 
     def update_location(self):
-        angle_radian = angle * math.pi/180
+        angle_radian = self.angle * math.pi/180
         velocity_x, velocity_y = self.velocity
 
 #         delta_x = self.speed * math.cos(angle_radian)
@@ -62,7 +58,7 @@ class Robot:
         self.location = (old_x + velocity_x, old_y + velocity_y)
 
         # Why does path_planner need discrete location?
-        discrete_location = self.histogram_grid.cont_to_discrete_point(self.location)
+        discrete_location = self.path_planner.histogram_grid.continuous_point_to_discrete_point(self.location)
         self.path_planner.set_robot_location(discrete_location)
 
 
@@ -92,13 +88,64 @@ class Robot:
     #// 2. get speed from nothing at t=0.
     #// 3. Given position at 0, draw simulation at t=0,
     #// 4. Now move from t=0 to t=1 by only updating the robot's position.
-    def move(self, currentTimestep, numTimesteps):
-        self.set_angle() # // angle: Null (or optionally, t-1) => t
-        self.set_speed() # // speed: Null (or optionally, t-1) => t
-
-        self.draw(currentTimestep, numTimesteps) # // at t=0, angle: t=0, speed, position: t
+    def step(self, draw=True):
+        self.update_angle() # // angle: Null (or optionally, t-1) => t
+        # self.set_speed() # // speed: Null (or optionally, t-1) => t
+        self.update_velocity()
+         # // at t=0, angle: t=0, speed, position: t
 
         self.update_location() #// position: t => t+1
+
+    def loop(self, num_steps, draw=True):
+        plt.ion()
+
+        if draw == True:
+            figure, ax = plt.subplots()
+            obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
+            paths_robot = ax.scatter(*self.location, color='blue')
+            paths_target = ax.scatter(*self.path_planner.target_location, color='green')
+            paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+            # self.draw(ax)
+            display.clear_output(wait=True)
+            display.display(plt.gcf())
+            # plt.draw()
+
+        for i in range(num_steps):
+            self.step()
+            if draw == True:
+                # self.draw(ax)
+                # time.sleep(1)
+                obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles()
+                # paths_robot.set_offsets(np.c_[self.location[0], self.location[1]])
+                # paths_robot.set_offsets(np.c_[self.location[0], self.location[1]])
+                # paths_target.set_offsets(np.c_[self.path_planner.target_location[0], self.path_planner.target_location[1]])
+                # paths_obstacles.set_offsets(np.c_[obstacles_x, obstacles_y])
+                paths_robot = ax.scatter(*self.location, color='blue')
+                paths_target = ax.scatter(*self.path_planner.target_location, color='green')
+                paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+
+                display.clear_output(wait=True)
+                display.display(plt.gcf())
+                # figure.canvas.draw_idle()
+                # plt.pause(0.1)
+
+    def draw(self, ax):
+        # figure = plt.gcf()
+        # figure.clf()
+
+        # figure = plt.figure()
+        # FIXME: we are now using the robot's perceived obstacles.
+        obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
+        paths_robot = ax.scatter(*self.location, color='blue')
+        paths_target = ax.scatter(*self.path_planner.target_location, color='green')
+        paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+        # print(paths_obstacles)
+        # plt.gcf().canvas.draw() # this draws the path
+        # paths_robot.set_array(what) # or set_offsets
+        # plt.show()
+        # plt.draw()
+
+
 
     def get_polar_bins(self):
         return self.polar_histogram.getPolarBins()

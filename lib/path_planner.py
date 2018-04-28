@@ -29,6 +29,7 @@ class PathPlanner:
         self.l = l
         self.s_max = s_max
         self.valley_threshold = valley_threshold
+        self.target_location = target_location
         # self.robot_location = histogram_grid.get_robot_location()
         # self.target_discrete_location = histogram_grid.get_target_discrete_location()
         self.robot_to_target_angle = histogram_grid.get_angle_between_discrete_points(robot_location, target_location)
@@ -83,6 +84,8 @@ class PathPlanner:
         # for k, g in groupby(enumerate(self._polar_histogram), lambda (i, x): i-x):
         return [list(map(itemgetter(1), g)) for k, g in groupby(enumerate(filtered_polar_histogram), lambda ix : ix[0] - ix[1])]
 
+    def get_obstacles(self):
+        return self.histogram_grid.get_obstacles()
 
     def get_best_angle(self):
         filtered_polar_histogram = self.get_filtered_polar_histogram()

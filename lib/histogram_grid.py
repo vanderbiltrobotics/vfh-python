@@ -12,7 +12,7 @@ class HistogramGrid:
         self.resolution = resolution
         ncols, nrows = dimension
         self.histogram_grid = [[0] * ncols for r in range(nrows)]
-        self.object_grid = [[0] * ncols for i in range(nrows)]
+        # self.object_grid = [[0] * ncols for i in range(nrows)]
         self.robot_location = robot_location
         self.active_region_dimension = active_region_dimension
 
@@ -42,8 +42,8 @@ class HistogramGrid:
             continuous_point: A tuple ()
         """
         continuous_x, continuous_y = continuous_point
-        discrete_x = continuous_x//self.dimension
-        discrete_y = continuous_y//self.dimension
+        discrete_x = continuous_x//self.dimension[0]
+        discrete_y = continuous_y//self.dimension[1]
         # if(out.x < iMax && out.y < jMax) return out;
         # TODO ERROR HANDLING
         # throw;
@@ -129,6 +129,20 @@ class HistogramGrid:
 
     def set_target_discrete_location(self, target_discrete_location):
         self.target_discrete_location = target_discrete_location
+
+    # Get points(tuples)
+    def get_obstacles(self):
+
+        obstacles_points_x = []
+        obstacles_points_y = []
+        for row_idx, row in enumerate(self.histogram_grid):
+            for col_idx, cell in enumerate(row):
+                if cell != 0:
+                    # print("histogram_grid: obstacle =", (row_idx, col_idx))
+                    obstacles_points_x.append(row_idx)
+                    obstacles_points_y.append(col_idx)
+        # print("histogram_grid: obstacles_points =", list(zip(obstacles_points_x, obstacles_points_y)))
+        return obstacles_points_x, obstacles_points_y
 
 def get_discrete_displacement(discrete_start, discrete_end):
     return tuple(map(sub, discrete_start, discrete_end))
