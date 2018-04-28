@@ -89,6 +89,7 @@ class HistogramGrid:
         discrete_displacement = get_discrete_displacement(discrete_start, discrete_end)
 
         delta_x, delta_y = discrete_displacement
+        # print("histogram_grid: (delta_x, delta_y) =", discrete_displacement)
 
         angle_radian = math.atan2(delta_y, delta_x)
         angle_degrees = math.degrees(angle_radian)
@@ -97,6 +98,7 @@ class HistogramGrid:
     def get_active_region(self):
         # REVIEW: the four coordinates are discrete?
         robot_location_x, robot_location_y = self.robot_location
+        # print("histogram_grid: self.robot_location =", self.robot_location)
         active_region_x_size, active_region_y_size = self.active_region_dimension
 
         active_region_min_x = robot_location_x - active_region_x_size / 2
@@ -117,7 +119,10 @@ class HistogramGrid:
             active_region_max_y = active_region_y_size
 
 
-        return (int(round(active_region_min_x)), int(round(active_region_min_y)), int(round(active_region_max_x)), int(round(active_region_max_y)))
+        active_region = (int(round(active_region_min_x)), int(round(active_region_min_y)), int(round(active_region_max_x)), int(round(active_region_max_y)))
+
+        print("histogram_grid: active_region =", active_region)
+        return active_region
 
 
     def get_robot_location(self):
