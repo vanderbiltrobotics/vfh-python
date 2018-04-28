@@ -72,9 +72,9 @@ class PathPlanner:
     # not have a certainty (due to distance) and ending at max length.
 
     def get_filtered_polar_histogram(self):
-        print(self.polar_histogram._polar_histogram)
+        # print("path_planner: unfiltered =", self.polar_histogram._polar_histogram)
         filtered = [bin_index for bin_index, certainty in enumerate(self.polar_histogram._polar_histogram) if certainty < self.valley_threshold]
-        print(filtered)
+        # print("path_planner: filtered < %s =" % self.valley_threshold, filtered)
         return filtered
 
 
@@ -87,7 +87,7 @@ class PathPlanner:
     def get_best_angle(self):
         filtered_polar_histogram = self.get_filtered_polar_histogram()
         sectors = self.get_sectors(filtered_polar_histogram)
-        print(sectors)
+        # print("path_planner: after filtering, sectors =", sectors)
 
         # Edge Case: there is only one sector. Raise error and cede control.
         if len(sectors[0]) == 1:
@@ -112,13 +112,17 @@ class PathPlanner:
                 k_f = sector[-1]
 
 
-            angle = (self.polar_histogram.get(k_n) + self.polar_histogram.get(k_f)) / 2
+            # print("k_n =", k_n)
+            # print("k_f =", k_f)
+            angle = (self.polar_histogram.get_middle_angle_of_bin(k_n) + self.polar_histogram.get_middle_angle_of_bin(k_f)) / 2
+            # print("path_planner: angle =", angle)
             angles.append(angle)
 
 
         distances = [(angle, abs(self.robot_to_target_angle - angle)) for angle in angles]
+        # print("path_planner: distances =", distances)
         smallest_distances = sorted(distances, key=itemgetter(1))
-
+        # print("path_planner: smallest_distances =", smallest_distances)
         return smallest_distances[0][0]
 
 
