@@ -199,7 +199,7 @@ class Robot:
                         # val = int(round(pct*total/100.0))
                         index, (angle, certainty) = next(generator)
                         # index += 1
-                        return '{angle:.0f}:  {certainty:.1f}'.format(angle=angle, certainty=certainty)
+                        return '{certainty:.1f}'.format(certainty=certainty)
                     return my_autopct
 
                 polar_plot.clear()

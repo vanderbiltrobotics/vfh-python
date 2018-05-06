@@ -123,7 +123,7 @@ class PathPlanner:
                     k_f = k_n + s_max - 1
                 else:
                     k_n = len(sector) - 1
-                    k_f = k_n - s_max + 1
+                    k_f = k_n - self.s_max + 1
 
             else:
                 # Case 2: Narrow valley. Include all bins.
