@@ -112,7 +112,7 @@ class Robot:
         plt.ion() # enable interactive plotting mode
 
         if draw == True:
-            figure, (simulation_plot, polar_plot, valley_plot) = plt.subplots(1, 3, figsize=(15, 6))
+            figure, (simulation_plot, polar_plot, valley_plot) = plt.subplots(1, 3, figsize=(18, 6))
 
             # 1. Plot the simulation
             obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
@@ -135,9 +135,22 @@ class Robot:
             polar_histogram_by_angle = self.path_planner.polar_histogram.get_angle_certainty()
             # NOTE: instead of sectors, get polar histogram bins and filter them by valley threshold
             bin_percentages = [1.0/num_bins for angle, certainty in polar_histogram_by_angle]
+            bin_certainties = [certainty for angle, certainty in polar_histogram_by_angle]
             colors = ['blue' if certainty < valley_threshold else 'red' for angle, certainty in polar_histogram_by_angle]
             labels = [angle for angle, certainty in polar_histogram_by_angle]
-            polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True)
+            # index = 0
+            generator = enumerate(polar_histogram_by_angle)
+            def make_autopct(bin_percentages):
+                def my_autopct(pct):
+                    # index = 0
+                    # total = sum(values)
+                    # val = int(round(pct*total/100.0))
+                    index, (angle, certainty) = next(generator)
+                    # index += 1
+                    return '{angle:.0f}:  {certainty:.1f}'.format(angle=angle, certainty=certainty)
+                return my_autopct
+
+            (pie_patches, pie_texts, pie_autotexts) = polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True, autopct=make_autopct(bin_percentages))
             # 3. Plot the valley
 
 
@@ -174,10 +187,23 @@ class Robot:
                 polar_histogram_by_angle = self.path_planner.polar_histogram.get_angle_certainty()
                 # NOTE: instead of sectors, get polar histogram bins and filter them by valley threshold
                 bin_percentages = [1.0/num_bins for angle, certainty in polar_histogram_by_angle]
+                bin_certainties = [certainty for angle, certainty in polar_histogram_by_angle]
                 colors = ['blue' if certainty < valley_threshold else 'red' for angle, certainty in polar_histogram_by_angle]
-                polar_plot.pie(bin_percentages, colors=colors, startangle=0, counterclock=False)
+                labels = [angle for angle, certainty in polar_histogram_by_angle]
+                # index = 0
+                generator = enumerate(polar_histogram_by_angle)
+                def make_autopct(bin_percentages):
+                    def my_autopct(pct):
+                        # index = 0
+                        # total = sum(values)
+                        # val = int(round(pct*total/100.0))
+                        index, (angle, certainty) = next(generator)
+                        # index += 1
+                        return '{angle:.0f}:  {certainty:.1f}'.format(angle=angle, certainty=certainty)
+                    return my_autopct
 
-
+                polar_plot.clear()
+                polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True, autopct=make_autopct(bin_percentages))
                 # 3. Replot the valley
 
 
