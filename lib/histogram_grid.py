@@ -13,7 +13,8 @@ class HistogramGrid:
         ncols, nrows = dimension
         self.histogram_grid = [[0] * ncols for r in range(nrows)]
         # self.object_grid = [[0] * ncols for i in range(nrows)]
-        self.robot_location = robot_location
+        # CHANGED: Make Robot class the sole source of truth for location
+        # self.robot_location = robot_location
         self.active_region_dimension = active_region_dimension
 
     @classmethod
@@ -95,11 +96,15 @@ class HistogramGrid:
         angle_degrees = math.degrees(angle_radian)
         return angle_degrees
 
-    def get_active_region(self):
+    def get_active_region(self, robot_location):
         # REVIEW: the four coordinates are discrete?
-        robot_location_x, robot_location_y = self.robot_location
+        # robot_location_x, robot_location_y = self.robot_location
+        # CHANGED: Make Robot class the sole source of truth for location
+        robot_location_x, robot_location_y = robot_location
         # print("histogram_grid: self.robot_location =", self.robot_location)
+        # print("histogram_grid: get_active_region: self.active_region_dimension =", self.active_region_dimension)
         active_region_x_size, active_region_y_size = self.active_region_dimension
+        x_max, y_max = self.dimension
 
         active_region_min_x = robot_location_x - active_region_x_size / 2
         if active_region_min_x < 0:
@@ -110,29 +115,36 @@ class HistogramGrid:
             active_region_min_y = 0
 
         active_region_max_x = robot_location_x + active_region_x_size / 2
-        if active_region_max_x >= active_region_x_size:
-            active_region_max_x = active_region_x_size
+        # if active_region_max_x >= active_region_x_size:
+            # active_region_max_x = active_region_x_size
+        if active_region_max_x >= x_max:
+            # print("\nactive_region_max_x >= x_max\n")
+            active_region_max_x = x_max
 
         active_region_max_y = robot_location_y + active_region_y_size / 2
 
-        if active_region_max_y >= active_region_y_size:
-            active_region_max_y = active_region_y_size
+        # if active_region_max_y >= active_region_y_size:
+        #     active_region_max_y = active_region_y_size
+        if active_region_max_y >= y_max:
+            # print("\nactive_region_max_y >= y_max\n")
+            active_region_max_y = y_max
 
 
         active_region = (int(round(active_region_min_x)), int(round(active_region_min_y)), int(round(active_region_max_x)), int(round(active_region_max_y)))
 
-        print("histogram_grid: active_region =", active_region)
+        # print("histogram_grid: active_region =", active_region)
         return active_region
 
-
-    def get_robot_location(self):
-        return self.robot_location
+    # CHANGED: Make Robot class the sole source of truth for location
+    # def get_robot_location(self):
+    #     return self.robot_location
 
     def get_target_discrete_location(self):
         return self.target_discrete_location
 
-    def set_robot_location(self, robot_location):
-        self.robot_location = robot_location
+    # CHANGED: Make Robot class the sole source of truth for location
+    # def set_robot_location(self, robot_location):
+    #     self.robot_location = robot_location
 
     def set_target_discrete_location(self, target_discrete_location):
         self.target_discrete_location = target_discrete_location

@@ -37,30 +37,31 @@ class PathPlanner:
 
 #     //TODO: Add ability to dynamically set certainty value
 #     //TODO This function may be deprecated as we restructure the robot code for ROSMOD
-    def set_robot_location(self, new_location):
+    def set_robot_location(self, robot_location):
         """new_location: a tuple (x, y)."""
-        self.histogram_grid.set_robot_location(new_location)
-        self.generate_histogram()
+        # self.histogram_grid.set_robot_location(robot_location)
+        self.generate_histogram(robot_location)
 
 
     def set_target_discrete_location(self, target_discrete_location):
         self.histogram_grid.set_target_discrete_location(target_discrete_location)
 
 
-    def generate_histogram(self):
-        robot_location = self.histogram_grid.get_robot_location()
+    def generate_histogram(self, robot_location):
+        # robot_location = self.histogram_grid.get_robot_location()
         robot_to_target_angle = self.histogram_grid.get_angle_between_discrete_points(self.target_location, robot_location)
         # print("path_planner: robot_to_target_angle =", robot_to_target_angle)
 
         """Builds the vector field histogram based on current position of robot and surrounding obstacles"""
         self.polar_histogram.reset()
 
-        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.histogram_grid.get_active_region()
-
+        print("path_planner: generate_histogram: robot_location =", robot_location)
+        active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.histogram_grid.get_active_region(robot_location)
+        print("path_planner: generate_histogram: active_region =", (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
         histogram_grid = self.histogram_grid
         polar_histogram = self.polar_histogram
 
-        robot_location = histogram_grid.get_robot_location()
+        # robot_location = histogram_grid.get_robot_location()
 
         for x in range(active_region_min_x, active_region_max_x):
             for y in range(active_region_min_y, active_region_max_y):

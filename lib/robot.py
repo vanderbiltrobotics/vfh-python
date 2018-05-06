@@ -11,7 +11,7 @@ import math
 import time
 import numpy as np
 from IPython import display
-
+import warnings
 
 
 from lib.path_planner import PathPlanner
@@ -115,9 +115,9 @@ class Robot:
             paths_robot = ax.scatter(*self.location, color='blue')
             paths_target = ax.scatter(*self.path_planner.target_location, color='green')
             paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
-            active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region()
-
-            ax.add_patch(
+            active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region(self.location)
+            # print("robot: loop: active_region =", (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
+            rectangle = ax.add_patch(
                 patches.Rectangle(
                     (active_region_min_x, active_region_min_y),
                     active_region_max_x - active_region_min_x,
@@ -133,23 +133,23 @@ class Robot:
             # bnext.on_clicked(self.step_callback)
             # bprev = Button(ax, 'Previous')
             # bprev.on_clicked(callback.prev)
+            warnings.warn("robot: loop: active_region = (%s, %s, %s, %s)" % (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
+
+            print("robot: loop: active_region =", (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
 
 
         for i in range(num_steps):
+            print("robot: loop: active_region =", self.path_planner.histogram_grid.get_active_region(self.location))
             self.step()
             if draw == True:
-                # self.draw(ax)
                 # time.sleep(1)
                 obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles()
-                # paths_robot.set_offsets(np.c_[self.location[0], self.location[1]])
-                # paths_robot.set_offsets(np.c_[self.location[0], self.location[1]])
-                # paths_target.set_offsets(np.c_[self.path_planner.target_location[0], self.path_planner.target_location[1]])
-                # paths_obstacles.set_offsets(np.c_[obstacles_x, obstacles_y])
                 paths_robot = ax.scatter(*self.location, color='blue')
                 paths_target = ax.scatter(*self.path_planner.target_location, color='green')
                 paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
-
-                # display.clear_output(wait=True)
+                active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region(self.location)
+                rectangle.set_bounds(active_region_min_x, active_region_min_y, active_region_max_x - active_region_min_x, active_region_max_y - active_region_min_y)
+                display.clear_output(wait=True) # NOTE: Uncomment this for animation
                 display.display(plt.gcf())
                 # self.print_histogram()
                 # figure.canvas.draw_idle()
