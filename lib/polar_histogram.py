@@ -96,6 +96,10 @@ class PolarHistogram:
             string += str(i) + ' ' + str(i * self.bin_width) + ' ' + str(certainty) + '\n'
         return string
 
+    def get_angle_certainty(self):
+        """Instead of (bin_index, certainty), return (angle, certainty) pairs."""
+        return [(i * self.bin_width, certainty) for i, certainty in enumerate(self._polar_histogram)]
+
 
     def reset(self):
         self._polar_histogram = [0] * self.num_bins

@@ -12,6 +12,7 @@ import time
 import numpy as np
 from IPython import display
 import warnings
+import itertools
 
 
 from lib.path_planner import PathPlanner
@@ -101,30 +102,46 @@ class Robot:
         # print("robot: angle =", self.angle)
         self.update_angle() # // angle: Null (or optionally, t-1) => t
         # self.set_speed() # // speed: Null (or optionally, t-1) => t
+        print("robot: step: best angle =", self.angle )
         self.update_velocity()
          # // at t=0, angle: t=0, speed, position: t
 
         self.update_location() #// position: t => t+1
 
     def loop(self, num_steps, draw=True):
-        plt.ion()
+        plt.ion() # enable interactive plotting mode
 
         if draw == True:
-            figure, ax = plt.subplots()
+            figure, (simulation_plot, polar_plot, valley_plot) = plt.subplots(1, 3, figsize=(15, 6))
+
+            # 1. Plot the simulation
             obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
-            paths_robot = ax.scatter(*self.location, color='blue')
-            paths_target = ax.scatter(*self.path_planner.target_location, color='green')
-            paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+            paths_robot = simulation_plot.scatter(*self.location, color='blue')
+            paths_target = simulation_plot.scatter(*self.path_planner.target_location, color='green')
+            paths_obstacles = simulation_plot.scatter(obstacles_x, obstacles_y, color='red')
             active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region(self.location)
-            # print("robot: loop: active_region =", (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
-            rectangle = ax.add_patch(
+            rectangle = simulation_plot.add_patch(
                 patches.Rectangle(
                     (active_region_min_x, active_region_min_y),
                     active_region_max_x - active_region_min_x,
                     active_region_max_y - active_region_min_y,
-                    fill=False      # remove background
+                    fill=False
                 )
             )
+
+            # 2. Plot the polar histogram
+            num_bins = self.path_planner.polar_histogram.num_bins
+            valley_threshold = self.path_planner.valley_threshold
+            polar_histogram_by_angle = self.path_planner.polar_histogram.get_angle_certainty()
+            # NOTE: instead of sectors, get polar histogram bins and filter them by valley threshold
+            bin_percentages = [1.0/num_bins for angle, certainty in polar_histogram_by_angle]
+            colors = ['blue' if certainty < valley_threshold else 'red' for angle, certainty in polar_histogram_by_angle]
+            labels = [angle for angle, certainty in polar_histogram_by_angle]
+            polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True)
+            # 3. Plot the valley
+
+
+
             # self.draw(ax)
             display.clear_output(wait=True)
             display.display(plt.gcf())
@@ -133,32 +150,46 @@ class Robot:
             # bnext.on_clicked(self.step_callback)
             # bprev = Button(ax, 'Previous')
             # bprev.on_clicked(callback.prev)
-            warnings.warn("robot: loop: active_region = (%s, %s, %s, %s)" % (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
-
-            print("robot: loop: active_region =", (active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y))
 
 
         for i in range(num_steps):
-            print("robot: loop: active_region =", self.path_planner.histogram_grid.get_active_region(self.location))
+
             self.step()
             if draw == True:
                 # time.sleep(1)
+
+                # 1. Replot the simulation
                 obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles()
-                paths_robot = ax.scatter(*self.location, color='blue')
-                paths_target = ax.scatter(*self.path_planner.target_location, color='green')
-                paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
+                paths_robot = simulation_plot.scatter(*self.location, color='blue')
+                paths_target = simulation_plot.scatter(*self.path_planner.target_location, color='green')
+                paths_obstacles = simulation_plot.scatter(obstacles_x, obstacles_y, color='red')
                 active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region(self.location)
                 rectangle.set_bounds(active_region_min_x, active_region_min_y, active_region_max_x - active_region_min_x, active_region_max_y - active_region_min_y)
-                display.clear_output(wait=True) # NOTE: Uncomment this for animation
+
+
+                # 2. Replot the polar histogram
+                # sectors = self.path_planner.get_sectors() # NOTE: sectors are only valid
+                num_bins = self.path_planner.polar_histogram.num_bins
+                valley_threshold = self.path_planner.valley_threshold
+                polar_histogram_by_angle = self.path_planner.polar_histogram.get_angle_certainty()
+                # NOTE: instead of sectors, get polar histogram bins and filter them by valley threshold
+                bin_percentages = [1.0/num_bins for angle, certainty in polar_histogram_by_angle]
+                colors = ['blue' if certainty < valley_threshold else 'red' for angle, certainty in polar_histogram_by_angle]
+                polar_plot.pie(bin_percentages, colors=colors, startangle=0, counterclock=False)
+
+
+                # 3. Replot the valley
+
+
+
+                # display.clear_output(wait=True) # NOTE: Uncomment this for animation. Comment this out if you want to see all steps.
                 display.display(plt.gcf())
                 # self.print_histogram()
                 # figure.canvas.draw_idle()
                 # plt.pause(0.1)
 
                 # TODO: pie chart
-
     def step_callback(self, event):
-        # print("lol")
         self.step()
         self.print_histogram()
 
@@ -181,3 +212,7 @@ class Robot:
 
     def get_polar_bins(self):
         return self.polar_histogram.getPolarBins()
+
+
+def concatenate(*lists):
+    return itertools.chain(*lists)

@@ -12,7 +12,7 @@ from operator import itemgetter
 # PolarHistogram class creates an object to represent the Polar Histogram
 class PathPlanner:
     def __init__(self, histogram_grid, polar_histogram, robot_location, target_location, a=200, b=1, l=5,
-                 s_max=15, valley_threshold=500):
+                 s_max=15, valley_threshold=200):
         """
         Creates a Polar Histogram object with the number of bins passed.
 
@@ -48,9 +48,7 @@ class PathPlanner:
 
 
     def generate_histogram(self, robot_location):
-        # robot_location = self.histogram_grid.get_robot_location()
         robot_to_target_angle = self.histogram_grid.get_angle_between_discrete_points(self.target_location, robot_location)
-        # print("path_planner: robot_to_target_angle =", robot_to_target_angle)
 
         """Builds the vector field histogram based on current position of robot and surrounding obstacles"""
         self.polar_histogram.reset()
@@ -61,7 +59,6 @@ class PathPlanner:
         histogram_grid = self.histogram_grid
         polar_histogram = self.polar_histogram
 
-        # robot_location = histogram_grid.get_robot_location()
 
         for x in range(active_region_min_x, active_region_max_x):
             for y in range(active_region_min_y, active_region_max_y):
@@ -87,19 +84,23 @@ class PathPlanner:
         return filtered
 
 
-    def get_sectors(self, filtered_polar_histogram):
+    def get_sectors_from_filtered_polar_histogram(self, filtered_polar_histogram):
         # TODO: each sector needs to be sorted by wrapped angle.
-        # for k, g in groupby(enumerate(self._polar_histogram), lambda (i, x): i-x):
         return [list(map(itemgetter(1), g)) for k, g in groupby(enumerate(filtered_polar_histogram), lambda ix : ix[0] - ix[1])]
+
+
+    def get_sectors(self):
+        filtered_polar_histogram = self.get_filtered_polar_histogram()
+        sectors = self.get_sectors_from_filtered_polar_histogram(filtered_polar_histogram)
+        return sectors
+
 
     def get_obstacles(self):
         return self.histogram_grid.get_obstacles()
 
-    def get_best_angle(self, robot_to_target_angle):
-        filtered_polar_histogram = self.get_filtered_polar_histogram()
-        sectors = self.get_sectors(filtered_polar_histogram)
-        # print("path_planner: after filtering, sectors =", sectors)
 
+    def get_best_angle(self, robot_to_target_angle):
+        sectors = self.get_sectors()
         if len(sectors) == 0:
             # raise ValueError('path_planner: the entire histogram is a valley, given vallye threshold ' + str(self.valley_threshold))
             least_likely_bin = sorted(range(len(self.polar_histogram._polar_histogram)), key=lambda k: self.polar_histogram._polar_histogram[k])[0]
