@@ -70,6 +70,7 @@ class PathPlanner:
                 polar_histogram.add_certainty_to_bin_at_angle(robot_to_node_angle, delta_certainty)
                 histogram_grid.get_certainty_at_discrete_point(node_considered)
 
+
         polar_histogram.smooth_histogram(self.l)
 
 

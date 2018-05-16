@@ -16,4 +16,4 @@ consideration is that Phil sucks at C++ but no one sucks at Python.
 
 # TODOs
 
-- [] BUG: Histogram grid active region is upside down.
+- [] BUG: Histogram grid active region is upside down. Potential cause: have been using \[x\]\[y\] but should have been \[y\]\[x\]

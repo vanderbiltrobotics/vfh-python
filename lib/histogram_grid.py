@@ -27,8 +27,10 @@ class HistogramGrid:
             reader = csv.reader(f, delimiter=" ")
             lines = list(reader)
 
+        # Convert string "1"s and "0"s to integer 1s and 0s
         lines = list(map(lambda l: list(map(int, l)), lines))
-#         print(*lines, sep="\n")
+        print("histogram_grid: histogram =")
+        print(*lines, sep="\n")
         dimension = (len(lines[0]), len(lines))
         hg = cls(dimension, resolution, robot_location, active_region_dimension)
         hg.histogram_grid = lines
@@ -62,7 +64,8 @@ class HistogramGrid:
             certainty: certainty value to set.
         """
         discrete_x, discrete_y = self.continuous_point_to_discrete_point(continuous_point)
-        self.histogram_grid[discrete_x][discrete_y] = certainty
+        # self.histogram_grid[discrete_x][discrete_y] = certainty
+        self.histogram_grid[discrete_y][discrete_x] = certainty
 
 
     def get_certainty_at_discrete_point(self, discrete_point):
@@ -70,7 +73,8 @@ class HistogramGrid:
         Returns the certainty of an object being present at the given node
         """
         discrete_x, discrete_y = discrete_point
-        return self.histogram_grid[discrete_x][discrete_y]
+        # return self.histogram_grid[discrete_x][discrete_y]
+        return self.histogram_grid[discrete_y][discrete_x]
 
 
     def get_continuous_distance_between_discrete_points(self, discrete_start, discrete_end):
@@ -158,8 +162,8 @@ class HistogramGrid:
             for col_idx, cell in enumerate(row):
                 if cell != 0:
                     # print("histogram_grid: obstacle =", (row_idx, col_idx))
-                    obstacles_points_x.append(row_idx)
-                    obstacles_points_y.append(col_idx)
+                    obstacles_points_x.append(col_idx)
+                    obstacles_points_y.append(row_idx)
         # print("histogram_grid: obstacles_points =", list(zip(obstacles_points_x, obstacles_points_y)))
         return obstacles_points_x, obstacles_points_y
 

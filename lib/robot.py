@@ -128,6 +128,7 @@ class Robot:
                     fill=False
                 )
             )
+            simulation_plot.invert_yaxis()
 
             # 2. Plot the polar histogram
             num_bins = self.path_planner.polar_histogram.num_bins
@@ -155,10 +156,10 @@ class Robot:
 
             # 3. Plot the valley
             histogram_grid_active_region = self.path_planner.histogram_grid.get_histogram_grid_active_region(active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y)
-            print('histogram =')
+            print('active region histogram =')
             print(*histogram_grid_active_region, sep='\n')
             histogram_grid_plot.clear()
-            histogram_grid_plot.matshow(histogram_grid_active_region, origin="lower")
+            histogram_grid_plot.matshow(histogram_grid_active_region, origin="upper")
 
 
             # self.draw(ax)
@@ -185,6 +186,7 @@ class Robot:
                 active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y = self.path_planner.histogram_grid.get_active_region(self.location)
                 rectangle.set_bounds(active_region_min_x, active_region_min_y, active_region_max_x - active_region_min_x, active_region_max_y - active_region_min_y)
 
+                # simulation_plot.invert_yaxis()
 
                 # 2. Replot the polar histogram
                 # sectors = self.path_planner.get_sectors() # NOTE: sectors are only valid
@@ -214,10 +216,10 @@ class Robot:
 
                 # 3. Replot the histogram_grid
                 histogram_grid_active_region = self.path_planner.histogram_grid.get_histogram_grid_active_region(active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y)
-                print('histogram =')
+                print('active region histogram =')
                 print(*histogram_grid_active_region, sep='\n')
                 histogram_grid_plot.clear()
-                histogram_grid_plot.matshow(histogram_grid_active_region, origin="lower")
+                histogram_grid_plot.matshow(histogram_grid_active_region, origin="upper")
 
 
                 # 4. Actually display the plots
