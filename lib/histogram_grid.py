@@ -163,5 +163,11 @@ class HistogramGrid:
         # print("histogram_grid: obstacles_points =", list(zip(obstacles_points_x, obstacles_points_y)))
         return obstacles_points_x, obstacles_points_y
 
+    def get_histogram_grid_active_region(self, active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y):
+        # Return histogram_grid[active_region_min_x:active_region_max_y]
+        return [self.histogram_grid[row][active_region_min_x:active_region_max_x + 1] for row in range(active_region_min_y, active_region_max_y + 1)]
+        # return [self.histogram_grid[row][active_region_min_y:active_region_max_y + 1] for row in range(active_region_min_x, active_region_max_x + 1)]
+
+
 def get_discrete_displacement(discrete_start, discrete_end):
     return tuple(map(sub, discrete_start, discrete_end))

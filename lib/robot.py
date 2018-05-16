@@ -112,7 +112,7 @@ class Robot:
         plt.ion() # enable interactive plotting mode
 
         if draw == True:
-            figure, (simulation_plot, polar_plot, valley_plot) = plt.subplots(1, 3, figsize=(18, 6))
+            figure, (simulation_plot, polar_plot, histogram_grid_plot) = plt.subplots(1, 3, figsize=(18, 6))
 
             # 1. Plot the simulation
             obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
@@ -151,13 +151,19 @@ class Robot:
                 return my_autopct
 
             (pie_patches, pie_texts, pie_autotexts) = polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True, autopct=make_autopct(bin_percentages))
-            # 3. Plot the valley
 
+
+            # 3. Plot the valley
+            histogram_grid_active_region = self.path_planner.histogram_grid.get_histogram_grid_active_region(active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y)
+            print('histogram =')
+            print(*histogram_grid_active_region, sep='\n')
+            histogram_grid_plot.clear()
+            histogram_grid_plot.matshow(histogram_grid_active_region, origin="lower")
 
 
             # self.draw(ax)
-            display.clear_output(wait=True)
-            display.display(plt.gcf())
+            # display.clear_output(wait=True)
+            # display.display(plt.gcf())
             # plt.draw()
             # bnext = Button(ax, 'Next')
             # bnext.on_clicked(self.step_callback)
@@ -204,33 +210,27 @@ class Robot:
 
                 polar_plot.clear()
                 polar_plot.pie(bin_percentages, colors=colors, labels=labels, startangle=0, counterclock=True, autopct=make_autopct(bin_percentages))
-                # 3. Replot the valley
 
 
+                # 3. Replot the histogram_grid
+                histogram_grid_active_region = self.path_planner.histogram_grid.get_histogram_grid_active_region(active_region_min_x, active_region_min_y, active_region_max_x, active_region_max_y)
+                print('histogram =')
+                print(*histogram_grid_active_region, sep='\n')
+                histogram_grid_plot.clear()
+                histogram_grid_plot.matshow(histogram_grid_active_region, origin="lower")
 
+
+                # 4. Actually display the plots
                 # display.clear_output(wait=True) # NOTE: Uncomment this for animation. Comment this out if you want to see all steps.
                 display.display(plt.gcf())
                 # self.print_histogram()
                 # figure.canvas.draw_idle()
                 # plt.pause(0.1)
 
-                # TODO: pie chart
     def step_callback(self, event):
         self.step()
         self.print_histogram()
 
-
-    # def draw(self, ax):
-    #     # figure = plt.gcf()
-    #     # figure.clf()
-    #
-    #     # figure = plt.figure()
-    #     # FIXME: we are now using the robot's perceived obstacles.
-    #     obstacles_x, obstacles_y = self.path_planner.histogram_grid.get_obstacles() # get a list of points [(x1, y1), (x2, y2), ...]
-    #     paths_robot = ax.scatter(*self.location, color='blue')
-    #     paths_target = ax.scatter(*self.path_planner.target_location, color='green')
-    #     paths_obstacles = ax.scatter(obstacles_x, obstacles_y, color='red')
-    #
 
     def print_histogram(self):
         self.path_planner.print_histogram()

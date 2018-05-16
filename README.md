@@ -12,3 +12,8 @@ consideration is that Phil sucks at C++ but no one sucks at Python.
 
 "What about production?" You ask. Python can be compiled into C++ code with
 `Cython`, and there are other possible hacks to jam this into ROSMOD.
+
+
+# TODOs
+
+- [] BUG: Histogram grid active region is upside down.
