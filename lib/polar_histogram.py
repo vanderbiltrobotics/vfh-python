@@ -78,7 +78,9 @@ class PolarHistogram:
 
     def add_certainty_to_bin_at_angle(self, angle, delta_certainty):
         """Adds the passed value to the current value of the histogr1am grid."""
-        self._polar_histogram[self.get_bin_index_from_angle(angle)] += delta_certainty
+        bin_index = self.get_bin_index_from_angle(angle)
+        # print("polar_histogram: adding certainty %s to bin #%s = %s" % (delta_certainty, bin_index, angle))
+        self._polar_histogram[bin_index] += delta_certainty
 
 
     def smooth_histogram(self, l):

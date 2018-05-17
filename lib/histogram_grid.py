@@ -1,3 +1,4 @@
+import numpy as np
 import csv
 from operator import sub # for get_distance_between_discrete_points
 import math
@@ -29,8 +30,8 @@ class HistogramGrid:
 
         # Convert string "1"s and "0"s to integer 1s and 0s
         lines = list(map(lambda l: list(map(int, l)), lines))
-        print("histogram_grid: histogram =")
-        print(*lines, sep="\n")
+        # print("histogram_grid: histogram =")
+        # print(*lines, sep="\n")
         dimension = (len(lines[0]), len(lines))
         hg = cls(dimension, resolution, robot_location, active_region_dimension)
         hg.histogram_grid = lines
@@ -91,14 +92,17 @@ class HistogramGrid:
         """
         Returns the angle between the line between pos2 and posRef and the horizontal along positive i direction.
         """
-        discrete_displacement = get_discrete_displacement(discrete_start, discrete_end)
+        # discrete_displacement = get_discrete_displacement(discrete_start, discrete_end)
 
-        delta_x, delta_y = discrete_displacement
-        # print("histogram_grid: (delta_x, delta_y) =", discrete_displacement)
-
-        angle_radian = math.atan2(delta_y, delta_x)
-        angle_degrees = math.degrees(angle_radian)
-        return angle_degrees
+        ang1 = np.arctan2(*discrete_start[::-1])
+        ang2 = np.arctan2(*discrete_end[::-1])
+        return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+        # delta_x, delta_y = discrete_displacement
+        # # print("histogram_grid: (delta_x, delta_y) =", discrete_displacement)
+        #
+        # angle_radian = math.atan2(delta_y, delta_x)
+        # angle_degrees = math.degrees(angle_radian)
+        # return angle_degrees
 
     def get_active_region(self, robot_location):
         # REVIEW: the four coordinates are discrete?

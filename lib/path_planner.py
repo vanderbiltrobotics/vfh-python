@@ -67,8 +67,10 @@ class PathPlanner:
                 distance = histogram_grid.get_continuous_distance_between_discrete_points(node_considered, robot_location)
                 delta_certainty = (certainty ** 2) * (self.a - self.b * distance)
                 robot_to_node_angle = histogram_grid.get_angle_between_discrete_points(robot_location, node_considered)
-                polar_histogram.add_certainty_to_bin_at_angle(robot_to_node_angle, delta_certainty)
-                histogram_grid.get_certainty_at_discrete_point(node_considered)
+                print("path_planner: robot_to_node_angle between robot_location", robot_location, "and node_considered", node_considered, "is", robot_to_node_angle)
+                if delta_certainty != 0:
+                    print("path_planner: adding certainty %.1f to angle %s or node" % (delta_certainty, robot_to_node_angle), node_considered)
+                    polar_histogram.add_certainty_to_bin_at_angle(robot_to_node_angle, delta_certainty)
 
 
         polar_histogram.smooth_histogram(self.l)
